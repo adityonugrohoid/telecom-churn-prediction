@@ -199,33 +199,72 @@ class ChurnDataGenerator(TelecomDataGenerator):
         total_sessions = np.clip(total_sessions + (tenure_months * 3).astype(int), 50, 500)
 
         # --------------------------------------------------------------------
-        # Churn label (~15% overall, influenced by risk factors)
+        # Churn label (~15% overall, driven by a logistic model on key
+        # features so that a classifier can learn strong signal).
+        #
+        # Design targets (approximate):
+        #   QoE MOS < 2.5  -> ~50-60% churn
+        #   QoE MOS 2.5-3.5 -> ~20-30% churn
+        #   QoE MOS > 4.0  -> ~5-8% churn
+        #   tenure < 6 mo  -> 2-3x churn vs tenure > 24 mo
+        #   high charges + poor QoE -> elevated churn
+        #   more tickets -> higher churn
         # --------------------------------------------------------------------
-        base_prob = self.churn_rate
 
-        churn_prob = np.full(n, base_prob)
+        # Build a log-odds (logit) score from the features.  The intercept
+        # is tuned so that the *average* predicted probability lands near
+        # self.churn_rate after calibration.
 
-        # Low QoE (< 2.5) triples the churn probability
-        low_qoe_mask = avg_qoe_mos < 2.5
-        churn_prob = np.where(low_qoe_mask, churn_prob * 3.0, churn_prob)
+        # QoE MOS is the dominant driver (range ~1-5, mean ~3).
+        # Negative coefficient: lower MOS -> higher churn logit.
+        qoe_score = -1.8 * (avg_qoe_mos - 3.0)
 
-        # Short tenure (< 6 months) doubles the churn probability
-        short_tenure_mask = tenure_months < 6
-        churn_prob = np.where(short_tenure_mask, churn_prob * 2.0, churn_prob)
+        # Tenure: short tenure raises churn risk.  Log-transform to
+        # compress the long tail and make the effect non-linear.
+        tenure_score = -0.8 * (np.log1p(tenure_months) - np.log1p(12))
 
-        # Month-to-month contracts increase churn by 1.5x
-        mtm_mask = contract_type == "month-to-month"
-        churn_prob = np.where(mtm_mask, churn_prob * 1.5, churn_prob)
+        # Monthly charges: higher charges increase churn, especially
+        # when combined with poor QoE (the QoE term already captures
+        # much of the interaction, but a direct charge effect adds
+        # realism).  Standardise around the median (~70).
+        charge_score = 0.4 * ((monthly_charges - 70) / 30)
 
-        # Cap probabilities at 1.0
-        churn_prob = np.clip(churn_prob, 0, 1.0)
+        # Support tickets: more complaints -> higher churn.
+        # Poisson(2) gives values mostly 0-6.
+        ticket_score = 0.35 * (total_tickets - 2)
 
-        # Calibrate so overall mean is close to self.churn_rate
-        # Scale probabilities proportionally
-        current_mean = churn_prob.mean()
-        if current_mean > 0:
-            scale_factor = self.churn_rate / current_mean
-            churn_prob = np.clip(churn_prob * scale_factor, 0, 1.0)
+        # Contract type: month-to-month has lowest switching cost.
+        contract_score = np.where(
+            contract_type == "month-to-month",
+            0.5,
+            np.where(contract_type == "one-year", -0.2, -0.6),
+        )
+
+        # Combine into a single logit with an intercept that targets
+        # ~15% overall churn.  The intercept is calibrated below.
+        logit = qoe_score + tenure_score + charge_score + ticket_score + contract_score
+
+        # Add moderate noise so classes are NOT perfectly separable,
+        # mimicking real-world unobserved heterogeneity.
+        noise = self.rng.normal(0, 0.6, n)
+        logit = logit + noise
+
+        # Shift the intercept so that mean(sigmoid(logit)) ≈ churn_rate.
+        # We do a quick Newton-style correction: find the offset that
+        # gives the desired mean probability.
+        def _mean_prob(offset: float) -> float:
+            return float(np.mean(1.0 / (1.0 + np.exp(-(logit + offset)))))
+
+        lo, hi = -10.0, 10.0
+        for _ in range(60):
+            mid = (lo + hi) / 2.0
+            if _mean_prob(mid) < self.churn_rate:
+                lo = mid
+            else:
+                hi = mid
+        intercept = (lo + hi) / 2.0
+
+        churn_prob = 1.0 / (1.0 + np.exp(-(logit + intercept)))
 
         is_churned = (self.rng.random(n) < churn_prob).astype(int)
 

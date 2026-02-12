@@ -43,8 +43,8 @@ Domain physics: QoE degradation (low MOS, poor SINR, reduced throughput) drives 
 
 ## Key Findings
 
-- **AUROC:** ~0.85 on held-out test set
-- **Top churn driver:** Low QoE MOS score is the strongest predictor of churn
+- **AUROC:** 0.86 on held-out test set
+- **Top churn driver:** Low QoE MOS score is the strongest predictor (correlation: -0.48), followed by packet loss (+0.36) and latency (+0.36)
 - Customers with degrading network quality over a 30-day window are 3x more likely to churn
 - Support ticket frequency amplifies churn risk when combined with poor network experience
 

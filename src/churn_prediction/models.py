@@ -56,12 +56,8 @@ class BaseModel:
             metrics["precision"] = precision_score(
                 y_test, y_pred, average="weighted", zero_division=0
             )
-            metrics["recall"] = recall_score(
-                y_test, y_pred, average="weighted", zero_division=0
-            )
-            metrics["f1"] = f1_score(
-                y_test, y_pred, average="weighted", zero_division=0
-            )
+            metrics["recall"] = recall_score(y_test, y_pred, average="weighted", zero_division=0)
+            metrics["f1"] = f1_score(y_test, y_pred, average="weighted", zero_division=0)
             if len(np.unique(y_test)) == 2:
                 y_proba = self.model.predict_proba(X_test)[:, 1]
                 metrics["roc_auc"] = roc_auc_score(y_test, y_proba)
@@ -70,8 +66,7 @@ class BaseModel:
             metrics["rmse"] = np.sqrt(metrics["mse"])
             metrics["mae"] = mean_absolute_error(y_test, y_pred)
             metrics["r2"] = 1 - (
-                np.sum((y_test - y_pred) ** 2)
-                / np.sum((y_test - y_test.mean()) ** 2)
+                np.sum((y_test - y_pred) ** 2) / np.sum((y_test - y_test.mean()) ** 2)
             )
         return metrics
 
@@ -105,6 +100,7 @@ class XGBoostChurnClassifier(BaseModel):
     def __init__(self, config: dict = None):
         super().__init__(config)
         import xgboost
+
         self.xgb = xgboost
 
     def train(self, X_train, y_train):
@@ -137,12 +133,12 @@ def cross_validate_model(model, X, y, cv_folds=5, scoring="accuracy"):
 
 
 def print_metrics(metrics, title="Model Performance"):
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"{title:^50}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     for metric, value in metrics.items():
         print(f"{metric:20s}: {value:8.4f}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
 
 
 def main():
@@ -171,8 +167,10 @@ def main():
 
     # Cross-validation
     cv_results = cross_validate_model(model, X_train, y_train, scoring="roc_auc")
-    print(f"Cross-validation ROC AUC: {cv_results['mean_score']:.4f} "
-          f"(+/- {cv_results['std_score']:.4f})")
+    print(
+        f"Cross-validation ROC AUC: {cv_results['mean_score']:.4f} "
+        f"(+/- {cv_results['std_score']:.4f})"
+    )
 
     # Feature importance
     importance_df = model.get_feature_importance()

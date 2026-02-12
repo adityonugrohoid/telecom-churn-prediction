@@ -28,7 +28,9 @@ class FeatureEngineer:
         """
         self.config = config or FEATURE_CONFIG
 
-    def create_temporal_features(self, df: pd.DataFrame, timestamp_col: str = "timestamp") -> pd.DataFrame:
+    def create_temporal_features(
+        self, df: pd.DataFrame, timestamp_col: str = "timestamp"
+    ) -> pd.DataFrame:
         """
         Create time-based features from timestamp.
 
@@ -47,18 +49,13 @@ class FeatureEngineer:
         df["day_of_week"] = df[timestamp_col].dt.dayofweek
         df["is_weekend"] = (df["day_of_week"] >= 5).astype(int)
         df["is_peak_hour"] = (
-            ((df["hour"] >= 9) & (df["hour"] <= 11)) |
-            ((df["hour"] >= 18) & (df["hour"] <= 21))
+            ((df["hour"] >= 9) & (df["hour"] <= 11)) | ((df["hour"] >= 18) & (df["hour"] <= 21))
         ).astype(int)
 
         return df
 
     def create_rolling_aggregates(
-        self,
-        df: pd.DataFrame,
-        group_col: str,
-        value_cols: List[str],
-        windows: List[int] = [7, 30]
+        self, df: pd.DataFrame, group_col: str, value_cols: List[str], windows: List[int] = [7, 30]
     ) -> pd.DataFrame:
         """
         Create rolling window aggregations.
@@ -111,29 +108,21 @@ class FeatureEngineer:
 
         # QoE trend: long-tenure + bad QoE is a stronger churn signal
         if "avg_qoe_mos" in df.columns and "tenure_months" in df.columns:
-            df["qoe_trend"] = df["avg_qoe_mos"] * np.where(
-                df["tenure_months"] > 12, 1, -1
-            )
+            df["qoe_trend"] = df["avg_qoe_mos"] * np.where(df["tenure_months"] > 12, 1, -1)
 
         # Network quality index: composite metric from SINR and throughput
         if "avg_sinr_db" in df.columns and "avg_throughput_mbps" in df.columns:
-            df["network_quality_index"] = (
-                0.5 * (df["avg_sinr_db"] / 25) +
-                0.5 * (df["avg_throughput_mbps"] / 100)
+            df["network_quality_index"] = 0.5 * (df["avg_sinr_db"] / 25) + 0.5 * (
+                df["avg_throughput_mbps"] / 100
             )
 
         # Service degradation: high latency and packet loss combined
         if "avg_latency_ms" in df.columns and "avg_packet_loss_pct" in df.columns:
-            df["service_degradation"] = (
-                df["avg_latency_ms"] / 100 +
-                df["avg_packet_loss_pct"] * 2
-            )
+            df["service_degradation"] = df["avg_latency_ms"] / 100 + df["avg_packet_loss_pct"] * 2
 
         # Ticket rate: tickets per month of tenure
         if "total_tickets" in df.columns and "tenure_months" in df.columns:
-            df["ticket_rate"] = df["total_tickets"] / np.maximum(
-                df["tenure_months"], 1
-            )
+            df["ticket_rate"] = df["total_tickets"] / np.maximum(df["tenure_months"], 1)
 
         # Session frequency: average daily sessions
         if "total_sessions" in df.columns:
@@ -141,17 +130,12 @@ class FeatureEngineer:
 
         # Charges per session: spending efficiency
         if "monthly_charges" in df.columns and "total_sessions" in df.columns:
-            df["charges_per_session"] = df["monthly_charges"] / np.maximum(
-                df["total_sessions"], 1
-            )
+            df["charges_per_session"] = df["monthly_charges"] / np.maximum(df["total_sessions"], 1)
 
         return df
 
     def encode_categorical(
-        self,
-        df: pd.DataFrame,
-        categorical_cols: List[str] = None,
-        method: str = "onehot"
+        self, df: pd.DataFrame, categorical_cols: List[str] = None, method: str = "onehot"
     ) -> Tuple[pd.DataFrame, dict]:
         """
         Encode categorical features.
@@ -187,11 +171,7 @@ class FeatureEngineer:
 
         return df, encoding_map
 
-    def handle_missing_values(
-        self,
-        df: pd.DataFrame,
-        strategy: str = "mean"
-    ) -> pd.DataFrame:
+    def handle_missing_values(self, df: pd.DataFrame, strategy: str = "mean") -> pd.DataFrame:
         """
         Handle missing values.
 
@@ -220,7 +200,7 @@ class FeatureEngineer:
         df: pd.DataFrame,
         create_temporal: bool = True,
         create_interactions: bool = True,
-        encode_cats: bool = True
+        encode_cats: bool = True,
     ) -> pd.DataFrame:
         """
         Run the complete feature engineering pipeline.

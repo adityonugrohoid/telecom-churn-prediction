@@ -24,11 +24,15 @@ class TelecomDataGenerator:
     def generate(self) -> pd.DataFrame:
         raise NotImplementedError("Subclasses must implement generate()")
 
-    def generate_sinr(self, n: int, base_sinr_db: float = 10.0, noise_std: float = 5.0) -> np.ndarray:
+    def generate_sinr(
+        self, n: int, base_sinr_db: float = 10.0, noise_std: float = 5.0
+    ) -> np.ndarray:
         sinr = self.rng.normal(base_sinr_db, noise_std, n)
         return np.clip(sinr, -5, 25)
 
-    def sinr_to_throughput(self, sinr_db: np.ndarray, network_type: np.ndarray, noise_factor: float = 0.2) -> np.ndarray:
+    def sinr_to_throughput(
+        self, sinr_db: np.ndarray, network_type: np.ndarray, noise_factor: float = 0.2
+    ) -> np.ndarray:
         sinr_linear = 10 ** (sinr_db / 10)
         capacity_factor = np.log2(1 + sinr_linear)
         max_throughput = np.where(network_type == "5G", 300, 50)
@@ -50,13 +54,21 @@ class TelecomDataGenerator:
         congestion = congestion + noise
         return np.clip(congestion, 0, 1)
 
-    def congestion_to_latency(self, congestion: np.ndarray, base_latency_ms: float = 20) -> np.ndarray:
-        latency = base_latency_ms * (1 + 5 * congestion ** 2)
+    def congestion_to_latency(
+        self, congestion: np.ndarray, base_latency_ms: float = 20
+    ) -> np.ndarray:
+        latency = base_latency_ms * (1 + 5 * congestion**2)
         jitter = self.rng.normal(0, 5, len(latency))
         latency = latency + jitter
         return np.clip(latency, 10, 300)
 
-    def compute_qoe_mos(self, throughput_mbps: np.ndarray, latency_ms: np.ndarray, packet_loss_pct: np.ndarray, app_type: np.ndarray) -> np.ndarray:
+    def compute_qoe_mos(
+        self,
+        throughput_mbps: np.ndarray,
+        latency_ms: np.ndarray,
+        packet_loss_pct: np.ndarray,
+        app_type: np.ndarray,
+    ) -> np.ndarray:
         mos_throughput = 1 + 4 * (1 - np.exp(-throughput_mbps / 10))
         latency_penalty = np.clip(latency_ms / 100, 0, 2)
         loss_penalty = packet_loss_pct / 2
@@ -152,9 +164,7 @@ class ChurnDataGenerator(TelecomDataGenerator):
         # Network and device attributes
         # --------------------------------------------------------------------
         network_type = self.rng.choice(["4G", "5G"], size=n, p=[0.6, 0.4])
-        device_class = self.rng.choice(
-            ["low", "mid", "high"], size=n, p=[0.2, 0.5, 0.3]
-        )
+        device_class = self.rng.choice(["low", "mid", "high"], size=n, p=[0.2, 0.5, 0.3])
 
         # --------------------------------------------------------------------
         # Network quality KPIs (per-customer averages)
@@ -168,9 +178,7 @@ class ChurnDataGenerator(TelecomDataGenerator):
         avg_latency_ms = self.congestion_to_latency(congestion)
 
         # Packet loss correlates with congestion
-        avg_packet_loss_pct = np.clip(
-            congestion * 3 + self.rng.normal(0, 0.5, n), 0, 10
-        )
+        avg_packet_loss_pct = np.clip(congestion * 3 + self.rng.normal(0, 0.5, n), 0, 10)
 
         # QoE MOS -- use a generic app type to get a balanced score
         app_types = self.rng.choice(
@@ -188,9 +196,7 @@ class ChurnDataGenerator(TelecomDataGenerator):
         total_tickets = self.rng.poisson(2, size=n)
         total_sessions = self.rng.integers(50, 501, size=n)
         # Longer-tenured customers tend to have more sessions
-        total_sessions = np.clip(
-            total_sessions + (tenure_months * 3).astype(int), 50, 500
-        )
+        total_sessions = np.clip(total_sessions + (tenure_months * 3).astype(int), 50, 500)
 
         # --------------------------------------------------------------------
         # Churn label (~15% overall, influenced by risk factors)

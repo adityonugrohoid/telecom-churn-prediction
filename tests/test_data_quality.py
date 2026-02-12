@@ -19,7 +19,6 @@ def sample_data():
 
 
 class TestDataQuality:
-
     def test_no_missing_values(self, sample_data):
         critical_cols = ["customer_id", "tenure_months", "avg_sinr_db", "avg_qoe_mos", "is_churned"]
         for col in critical_cols:
@@ -43,7 +42,9 @@ class TestDataQuality:
     def test_categorical_values(self, sample_data):
         assert set(sample_data["network_type"].unique()).issubset({"4G", "5G"})
         assert set(sample_data["device_class"].unique()).issubset({"low", "mid", "high"})
-        assert set(sample_data["contract_type"].unique()).issubset({"month-to-month", "one-year", "two-year"})
+        assert set(sample_data["contract_type"].unique()).issubset(
+            {"month-to-month", "one-year", "two-year"}
+        )
 
     def test_sample_size(self, sample_data):
         assert len(sample_data) == 1000
@@ -54,7 +55,6 @@ class TestDataQuality:
 
 
 class TestDataGenerator:
-
     def test_generator_reproducibility(self):
         gen1 = ChurnDataGenerator(seed=42, n_samples=100)
         gen2 = ChurnDataGenerator(seed=42, n_samples=100)

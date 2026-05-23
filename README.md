@@ -1,8 +1,8 @@
 <div align="center">
 
-# Telecom Customer Churn Prediction
+# Telecom Churn Prediction
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/badge/uv-package%20manager-blueviolet)](https://github.com/astral-sh/uv)
 [![XGBoost](https://img.shields.io/badge/XGBoost-1.7%2B-orange.svg)](https://xgboost.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -17,9 +17,9 @@
 
 ## Table of Contents
 
+- [The Problem](#the-problem)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
-- [The Problem](#the-problem)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)

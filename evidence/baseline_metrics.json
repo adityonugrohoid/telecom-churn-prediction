@@ -1,0 +1,21 @@
+{
+  "seed": 42,
+  "n_samples": 10000,
+  "n_train": 8000,
+  "n_test": 2000,
+  "churn_rate_test": 0.151,
+  "baseline": {
+    "name": "logistic regression on raw features",
+    "n_features": 17,
+    "roc_auc": 0.8727,
+    "accuracy": 0.8835,
+    "f1_churn": 0.5331
+  },
+  "model": {
+    "name": "xgboost on engineered features",
+    "n_features": 27,
+    "roc_auc": 0.8548,
+    "accuracy": 0.87,
+    "f1_churn": 0.4942
+  }
+}

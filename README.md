@@ -171,6 +171,17 @@ uv run jupyter nbconvert --to notebook --execute notebooks/01_churn_prediction.i
 | Top churn driver | QoE MOS (r = -0.48) | Low MOS strongest predictor |
 | Second driver | Packet loss (r = +0.36) | Tied with latency |
 
+### Baseline Comparison
+
+Both rows use the same 10,000 customers and the same stratified 80/20 split (seed 42), from `evidence/baseline_metrics.json`. Reproduce with `uv run python -m churn_prediction.baseline`.
+
+| Model | Features | AUROC | Accuracy | F1 (churn) |
+|-------|----------|-------|----------|------------|
+| Logistic regression baseline | 17 raw | 0.873 | 0.884 | 0.533 |
+| XGBoost | 27 engineered | 0.855 | 0.870 | 0.494 |
+
+The baseline is ahead. The synthetic generator draws churn from a logistic model: a sum of per-feature scores passed through a sigmoid (`data_generator.py`). Logistic regression fits that form directly, so the engineered features and the tree model add no lift on this data. XGBoost is kept for the SHAP explanations.
+
 ### Top Predictors
 
 1. `avg_qoe_mos` - low MOS score is the strongest churn signal (correlation -0.48)
